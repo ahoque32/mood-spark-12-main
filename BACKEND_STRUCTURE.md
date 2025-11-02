@@ -53,9 +53,7 @@ Use for traditional REST API endpoints that need to be called from the frontend.
 
 **When to use:**
 - External API integrations
-- Webhooks
-- Public API endpoints
-- Third-party service integrations
+
 
 **Example:**
 ```typescript
@@ -93,8 +91,7 @@ Business logic layer that handles complex operations and orchestrates queries.
 **Implement:**
 - Data validation and transformation
 - Business rules
-- Complex calculations
-- Service orchestration
+
 
 ### 4. Queries (src/lib/queries/)
 
@@ -123,8 +120,7 @@ Request/response processing before routes.
 - Authentication checks
 - Rate limiting
 - Request logging
-- CORS headers
-- Redirects
+
 
 ## Next Steps
 
@@ -149,11 +145,7 @@ Request/response processing before routes.
 
 ## Database Options
 
-- **Prisma:** Type-safe ORM with excellent Next.js support
-- **Drizzle:** Lightweight TypeScript ORM
-- **MongoDB:** Document database with Mongoose
-- **Supabase:** PostgreSQL with built-in auth
-- **PlanetScale:** MySQL-compatible serverless database
+
 
 ## Authentication Options
 
