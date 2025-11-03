@@ -1,31 +1,39 @@
-import { Mood } from "@/lib/models";
+import { MoodEntry } from '@prisma/client';
+import { MoodQueries, CreateMoodEntryData, MoodQueryParams } from '../queries/mood-queries';
 
 export class MoodService {
-  static async createMood(userId: string, mood: Mood, note: string) {
-    throw new Error("Not implemented");
+  static async createMoodEntry(userId: string, data: { mood: number; note?: string }): Promise<MoodEntry> {
+    const entryData: CreateMoodEntryData = {
+      userId,
+      mood: data.mood,
+      note: data.note,
+      source: 'SELF'
+    };
+    
+    return MoodQueries.create(entryData);
   }
 
-  static async getMoodById(id: string) {
-    throw new Error("Not implemented");
+  static async getMoodEntries(userId: string, params: MoodQueryParams = {}): Promise<MoodEntry[]> {
+    return MoodQueries.findByUser(userId, params);
   }
 
-  static async getMoodsByUser(userId: string, limit?: number) {
-    throw new Error("Not implemented");
+  static async getMoodById(id: string): Promise<MoodEntry | null> {
+    return MoodQueries.findById(id);
   }
 
-  static async updateMood(id: string, mood: Mood, note: string) {
-    throw new Error("Not implemented");
+  static async updateMoodEntry(id: string, data: { mood?: number; note?: string }): Promise<MoodEntry> {
+    return MoodQueries.update(id, data);
   }
 
-  static async deleteMood(id: string) {
-    throw new Error("Not implemented");
+  static async deleteMoodEntry(id: string): Promise<void> {
+    return MoodQueries.delete(id);
   }
 
-  static async getMoodsByDateRange(
-    userId: string,
-    startDate: Date,
-    endDate: Date
-  ) {
-    throw new Error("Not implemented");
+  static async getMoodsByDateRange(userId: string, startDate: Date, endDate: Date): Promise<MoodEntry[]> {
+    return MoodQueries.findByDateRange(userId, startDate, endDate);
+  }
+
+  static async getMoodAnalytics(userId: string, days: number = 30) {
+    return MoodQueries.getAnalytics(userId, days);
   }
 }

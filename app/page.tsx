@@ -21,23 +21,50 @@ export default function Home() {
 
     setIsLoading(true);
 
-    // Simulate save delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      const response = await fetch('/api/moods', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          mood: selectedMood,
+          note: note || undefined,
+        }),
+      });
 
-    addEntry(selectedMood, note);
+      if (response.ok) {
+        // Also add to local store for immediate UI update
+        addEntry(selectedMood, note);
 
-    toast({
-      title: "Mood saved",
-      description: "Your mood entry has been recorded.",
-    });
+        toast({
+          title: "Mood saved",
+          description: "Your mood entry has been recorded.",
+        });
 
-    setSelectedMood(null);
-    setNote("");
-    setIsLoading(false);
+        setSelectedMood(null);
+        setNote("");
+      } else {
+        const data = await response.json();
+        toast({
+          title: "Failed to save mood",
+          description: data.error || "Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Failed to save mood",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen pb-20 px-4 pt-8">
+    <div className="px-4 pt-8">
       <div className="max-w-2xl mx-auto space-y-8">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold text-foreground">

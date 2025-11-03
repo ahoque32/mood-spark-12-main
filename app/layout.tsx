@@ -1,4 +1,4 @@
-import { BottomNav } from "@/components/BottomNav";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Providers } from "./providers";
 import "@/index.css";
 
@@ -16,10 +16,9 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <Providers>
-          <div className="w-full min-h-screen">
+          <AppLayout>
             {children}
-            <BottomNav />
-          </div>
+          </AppLayout>
         </Providers>
       </body>
     </html>
