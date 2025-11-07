@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { UserService } from '@/lib/services/user-service';
 import { SessionService } from '@/lib/services/session-service';
 import { AuthService } from '@/lib/auth';
-import { handlePrismaError } from '@/lib/db/errors';
+import { handleDatabaseError } from '@/lib/db/errors';
 import { cookies } from 'next/headers';
 
 const registerSchema = z.object({
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       accessToken
     }, { status: 201 });
   } catch (error) {
-    const dbError = handlePrismaError(error);
+    const dbError = handleDatabaseError(error);
     return NextResponse.json(
       { error: dbError.message },
       { status: dbError.statusCode }

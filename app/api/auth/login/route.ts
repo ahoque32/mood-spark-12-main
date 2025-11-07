@@ -4,7 +4,7 @@ import { UserService } from '@/lib/services/user-service';
 import { SessionService } from '@/lib/services/session-service';
 import { AuthService } from '@/lib/auth';
 import { cookies } from 'next/headers';
-import { handlePrismaError } from '@/lib/db/errors';
+import { handleDatabaseError } from '@/lib/db/errors';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       accessToken
     });
   } catch (error) {
-    const dbError = handlePrismaError(error);
+    const dbError = handleDatabaseError(error);
     return NextResponse.json(
       { error: dbError.message },
       { status: dbError.statusCode }

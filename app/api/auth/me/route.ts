@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AuthService } from '@/lib/auth';
 import { UserService } from '@/lib/services/user-service';
-import { handlePrismaError } from '@/lib/db/errors';
+import { handleDatabaseError } from '@/lib/db/errors';
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     if (error.message === 'Authentication required') {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
-    const dbError = handlePrismaError(error);
+    const dbError = handleDatabaseError(error);
     return NextResponse.json(
       { error: dbError.message },
       { status: dbError.statusCode }

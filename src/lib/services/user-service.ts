@@ -1,5 +1,4 @@
-import { User, UserSettings } from '@prisma/client';
-import { UserQueries, UserWithSettings, CreateUserData } from '../queries/user-queries';
+import { User, UserSettings, UserQueries, UserWithSettings, CreateUserData } from '../queries/user-queries';
 import { RegisterInput } from '../validators/auth-validator';
 import { SettingsInput } from '../validators/settings-validator';
 
@@ -28,7 +27,11 @@ export class UserService {
   }
 
   static async updateUserSettings(userId: string, input: SettingsInput): Promise<UserSettings> {
-    return UserQueries.updateSettings(userId, input);
+    return UserQueries.updateSettings(userId, {
+      analyzeTone: input.analyzeTone,
+      correlateSocial: input.correlateSocial,
+      shareWithTherapist: input.shareWithTherapist
+    });
   }
 
   static async changePassword(userId: string, newPassword: string): Promise<User> {

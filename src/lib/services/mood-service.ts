@@ -1,5 +1,4 @@
-import { MoodEntry } from '@prisma/client';
-import { MoodQueries, CreateMoodEntryData, MoodQueryParams } from '../queries/mood-queries';
+import { MoodEntry, MoodQueries, CreateMoodEntryData, MoodQueryParams } from '../queries/mood-queries';
 
 export class MoodService {
   static async createMoodEntry(userId: string, data: { mood: number; note?: string }): Promise<MoodEntry> {

@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
-import { User } from '@prisma/client';
+import { User } from './queries/user-queries';
 
 export interface TokenPayload {
   userId: string;

@@ -1,51 +1,71 @@
-import { Session } from '@prisma/client';
-import prisma from '../db/client';
+import supabase from '../db/client';
 import { addDays } from 'date-fns';
+import { v4 as uuidv4 } from 'uuid';
+
+export interface Session {
+  id: string;
+  userId: string;
+  refreshToken: string;
+  expiresAt: string;
+  createdAt: string;
+}
 
 export class SessionQueries {
   static async create(userId: string, refreshToken: string): Promise<Session> {
     const expiresAt = addDays(new Date(), 7);
     
-    return prisma.session.create({
-      data: {
-        userId,
-        refreshToken,
-        expiresAt
-      }
-    });
+    const { data, error } = await supabase
+      .from('Session')
+      .insert({
+        id: uuidv4(),
+        userId: userId,
+        refreshToken: refreshToken,
+        expiresAt: expiresAt.toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+    return data;
   }
 
   static async findByToken(refreshToken: string): Promise<Session | null> {
-    return prisma.session.findUnique({
-      where: { refreshToken }
-    });
+    const { data, error } = await supabase
+      .from('Session')
+      .select('*')
+      .eq('refreshToken', refreshToken)
+      .single();
+
+    if (error) return null;
+    return data;
   }
 
   static async delete(refreshToken: string): Promise<void> {
-    await prisma.session.delete({
-      where: { refreshToken }
-    }).catch(() => {});
+    await supabase
+      .from('Session')
+      .delete()
+      .eq('refreshToken', refreshToken);
   }
 
   static async deleteAllByUser(userId: string): Promise<void> {
-    await prisma.session.deleteMany({
-      where: { userId }
-    });
+    await supabase
+      .from('Session')
+      .delete()
+      .eq('userId', userId);
   }
 
   static async deleteExpired(): Promise<void> {
-    await prisma.session.deleteMany({
-      where: {
-        expiresAt: { lt: new Date() }
-      }
-    });
+    await supabase
+      .from('Session')
+      .delete()
+      .lt('expiresAt', new Date().toISOString());
   }
 
   static async isValid(refreshToken: string): Promise<boolean> {
     const session = await this.findByToken(refreshToken);
     if (!session) return false;
     
-    if (session.expiresAt < new Date()) {
+    if (new Date(session.expiresAt) < new Date()) {
       await this.delete(refreshToken);
       return false;
     }
