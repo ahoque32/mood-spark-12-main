@@ -1,0 +1,42 @@
+{
+  "name": "mood-spark-usage-agent",
+  "version": "1.0.0",
+  "description": "Background agent for tracking system-wide laptop usage for Mood Spark",
+  "main": "index.js",
+  "bin": {
+    "mood-agent": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --trace-warnings index.js",
+    "install-global": "npm install -g .",
+    "service-install": "node scripts/install-service.js",
+    "service-uninstall": "node scripts/uninstall-service.js"
+  },
+  "keywords": [
+    "mood-tracking",
+    "system-monitoring",
+    "background-agent",
+    "usage-analytics"
+  ],
+  "author": "Mood Spark Team",
+  "license": "MIT",
+  "dependencies": {
+    "active-win": "^8.0.0",
+    "iohook": "^0.9.3",
+    "node-machine-id": "^1.1.12",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "preferGlobal": true
+}
