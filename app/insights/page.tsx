@@ -6,7 +6,9 @@ import { SummaryCard } from "@/components/SummaryCard";
 import { SentimentChart } from "@/components/SentimentChart";
 import { Card } from "@/components/ui/card";
 import { FileText, MessageSquare } from "lucide-react";
-
+import { FeatureImportanceChart } from "src/components/reports/FeatureImportanceChart";
+import { SleepVsMoodChart } from "src/components/reports/SleepVsMoodChart";
+import { MoodPredictionsChart } from "src/components/reports/MoodPredictionsChart";
 export default function Insights() {
   const { trend, summary, init } = useAppStore();
 
@@ -44,6 +46,21 @@ export default function Insights() {
             <MessageSquare className="w-6 h-6 text-muted-foreground" />
             <span className="text-sm font-medium">Message Sentiment</span>
             <span className="text-xs text-muted-foreground">Coming soon</span>
+          </Card>
+
+          <Card className="p-6 shadow-[var(--shadow-card)]">
+            <h2 className="text-lg font-semibold mb-4">Feature Importance</h2>
+            <FeatureImportanceChart />
+          </Card>
+
+          <Card className="p-6 shadow-[var(--shadow-card)]">
+            <h2 className="text-lg font-semibold mb-4">Sleep vs Mood</h2>
+            <SleepVsMoodChart days={14} />
+          </Card>
+
+          <Card className="p-6 shadow-[var(--shadow-card)]">
+            <h2 className="text-lg font-semibold mb-4">Mood Predictions</h2>
+            <MoodPredictionsChart days={14} />
           </Card>
         </div>
       </div>
