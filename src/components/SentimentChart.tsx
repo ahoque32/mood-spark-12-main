@@ -46,17 +46,17 @@ export const SentimentChart = ({ data }: SentimentChartProps) => {
           <Line
             type="monotone"
             dataKey="analyzedSentiment"
-            stroke="hsl(320, 85%, 70%)"
+            stroke="hsl(21, 92%, 63%)"
             strokeWidth={2}
-            dot={{ fill: 'hsl(320, 85%, 70%)', r: 4 }}
+            dot={{ fill: 'hsl(21, 92%, 63%)', r: 4 }}
             name="Message Sentiment (Analyzed)"
           />
           <Line
             type="monotone"
             dataKey="selfMood"
-            stroke="hsl(210, 90%, 60%)"
+            stroke="hsl(186, 79%, 42%)"
             strokeWidth={2}
-            dot={{ fill: 'transparent', stroke: 'hsl(210, 90%, 60%)', strokeWidth: 2, r: 4 }}
+            dot={{ fill: 'transparent', stroke: 'hsl(186, 79%, 42%)', strokeWidth: 2, r: 4 }}
             name="Mood Log (Self-Reported)"
           />
         </LineChart>

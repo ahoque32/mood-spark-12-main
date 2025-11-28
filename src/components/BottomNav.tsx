@@ -15,28 +15,33 @@ export const BottomNav = () => {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
-      <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-4">
-        {navItems.map((item) => {
-          const isActive = pathname === item.path;
-          const Icon = item.icon;
+    <nav className="fixed bottom-4 left-0 right-0 z-50">
+      <div className="mx-auto max-w-3xl px-4">
+        <div className="flex h-16 items-center justify-between gap-2 rounded-2xl border border-border/80 bg-card/90 px-2 shadow-[var(--shadow-card-hover)] backdrop-blur-xl">
+          {navItems.map((item) => {
+            const isActive = pathname === item.path;
+            const Icon = item.icon;
 
-          return (
-            <Link
-              key={item.path}
-              href={item.path}
-              className={cn(
-                "flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all duration-300",
-                isActive
-                  ? "bg-primary text-primary-foreground scale-105"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              )}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="text-xs font-medium">{item.label}</span>
-            </Link>
-          );
-        })}
+            return (
+              <Link
+                key={item.path}
+                href={item.path}
+                className={cn(
+                  "relative flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-300",
+                  isActive
+                    ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg"
+                    : "text-muted-foreground hover:bg-muted"
+                )}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="hidden sm:inline">{item.label}</span>
+                {isActive && (
+                  <span className="absolute -top-2 h-1 w-10 rounded-full bg-primary/70" />
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );

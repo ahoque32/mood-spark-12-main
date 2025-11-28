@@ -11,11 +11,11 @@ export function SleepVsMoodChart({ days = 14 }: { days?: number }) {
     <div className="w-full h-64">
       <ResponsiveContainer>
         <ScatterChart>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis type="number" dataKey="hours_slept" name="Hours Slept" />
-          <YAxis type="number" dataKey="mood_label" name="Mood" domain={[1,5]} />
-          <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-          <Scatter data={points} fill="#f472b6" />
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+          <XAxis type="number" dataKey="hours_slept" name="Hours Slept" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+          <YAxis type="number" dataKey="mood_label" name="Mood" domain={[1,5]} tick={{ fill: "hsl(var(--muted-foreground))" }} />
+          <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} />
+          <Scatter data={points} fill="hsl(21, 92%, 63%)" />
         </ScatterChart>
       </ResponsiveContainer>
     </div>
