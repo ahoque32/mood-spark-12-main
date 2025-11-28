@@ -14,13 +14,13 @@ export function MoodPredictionsChart({ days = 14 }: { days?: number }) {
     <div className="w-full h-64">
       <ResponsiveContainer>
         <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-          <YAxis domain={[1,5]} />
-          <Tooltip />
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+          <XAxis dataKey="day" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+          <YAxis domain={[1,5]} tick={{ fill: "hsl(var(--muted-foreground))" }} />
+          <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} />
           <Legend />
-          <Line type="monotone" dataKey="y_pred" name="Predicted" stroke="#a78bfa" dot={false} strokeWidth={2} />
-          <Line type="monotone" dataKey="y_true" name="Actual" stroke="#f472b6" dot={true} strokeWidth={1} />
+          <Line type="monotone" dataKey="y_pred" name="Predicted" stroke="hsl(186, 79%, 42%)" dot={false} strokeWidth={2} />
+          <Line type="monotone" dataKey="y_true" name="Actual" stroke="hsl(21, 92%, 63%)" dot={true} strokeWidth={1.5} />
         </LineChart>
       </ResponsiveContainer>
     </div>
