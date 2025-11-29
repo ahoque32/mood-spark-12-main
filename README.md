@@ -69,3 +69,30 @@ mood-spark-12-main/
 - Privacy-focused settings
 - Responsive design
 - Dark mode support
+
+## Seed 30 Days of Dummy Data
+
+Choose a target user by Auth UUID or by email.
+
+Add this to env file
+$env:SEED_EMAIL="test@example.com"   # or: $env:SEED_USER_ID="<auth-uuid>"
+
+Then Run
+npx tsx scripts/seed_dummy_daily_features.ts
+
+
+## Train the Model
+
+npx tsx scripts/train_model.ts
+
+You should see a JSON line:
+
+{ "model_version": "v2025...", "train_rows": 30, "train_mae": 0.xx }
+
+This writes to model_registry, model_feature_importance, and model_predictions.
+
+## Run the App
+
+npm run dev
+
+Open http://localhost:3000 
