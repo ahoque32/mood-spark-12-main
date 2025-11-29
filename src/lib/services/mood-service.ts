@@ -2,6 +2,18 @@ import { MoodEntry, MoodQueries, CreateMoodEntryData, MoodQueryParams } from '..
 
 export class MoodService {
   static async createMoodEntry(userId: string, data: { mood: number; note?: string }): Promise<MoodEntry> {
+    // Check if entry already exists for today
+    const existingEntry = await this.getTodayEntry(userId);
+    
+    if (existingEntry) {
+      // Update existing entry instead of creating new one
+      return MoodQueries.update(existingEntry.id, {
+        mood: data.mood,
+        note: data.note
+      });
+    }
+    
+    // Create new entry if none exists today
     const entryData: CreateMoodEntryData = {
       userId,
       mood: data.mood,
@@ -10,6 +22,16 @@ export class MoodService {
     };
     
     return MoodQueries.create(entryData);
+  }
+  
+  static async getTodayEntry(userId: string): Promise<MoodEntry | null> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const entries = await MoodQueries.findByDateRange(userId, today, tomorrow);
+    return entries.length > 0 ? entries[0] : null;
   }
 
   static async getMoodEntries(userId: string, params: MoodQueryParams = {}): Promise<MoodEntry[]> {

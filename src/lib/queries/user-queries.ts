@@ -74,6 +74,7 @@ export class UserQueries {
     
     // Create user
     const userId = uuidv4();
+    const now = new Date().toISOString();
     const { data: user, error: userError } = await supabase
       .from('User')
       .insert({
@@ -81,7 +82,9 @@ export class UserQueries {
         email: data.email,
         passwordHash: hashedPassword,
         name: data.name,
-        tokenVersion: 0
+        tokenVersion: 0,
+        createdAt: now,
+        updatedAt: now
       })
       .select()
       .single();
@@ -98,7 +101,9 @@ export class UserQueries {
         userId: user.id,
         analyzeTone: false,
         correlateSocial: false,
-        shareWithTherapist: false
+        shareWithTherapist: false,
+        createdAt: now,
+        updatedAt: now
       });
 
     if (settingsError) {
@@ -128,7 +133,10 @@ export class UserQueries {
     if (existingSettings) {
       const { data, error } = await supabase
         .from('UserSettings')
-        .update(settings)
+        .update({
+          ...settings,
+          updatedAt: new Date().toISOString()
+        })
         .eq('userId', userId)
         .select()
         .single();
@@ -137,6 +145,7 @@ export class UserQueries {
       return data;
     } else {
       // Create new settings if they don't exist
+      const settingsNow = new Date().toISOString();
       const { data, error } = await supabase
         .from('UserSettings')
         .insert({
@@ -144,7 +153,9 @@ export class UserQueries {
           userId: userId,
           analyzeTone: settings.analyzeTone ?? false,
           correlateSocial: settings.correlateSocial ?? false,
-          shareWithTherapist: settings.shareWithTherapist ?? false
+          shareWithTherapist: settings.shareWithTherapist ?? false,
+          createdAt: settingsNow,
+          updatedAt: settingsNow
         })
         .select()
         .single();
@@ -171,7 +182,8 @@ export class UserQueries {
     const { data, error } = await supabase
       .from('User')
       .update({ 
-        passwordHash: hashedPassword
+        passwordHash: hashedPassword,
+        updatedAt: new Date().toISOString()
       })
       .eq('id', userId)
       .select()
@@ -193,7 +205,8 @@ export class UserQueries {
     const { data, error } = await supabase
       .from('User')
       .update({ 
-        tokenVersion: newVersion
+        tokenVersion: newVersion,
+        updatedAt: new Date().toISOString()
       })
       .eq('id', userId)
       .select()

@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, BarChart3, Settings } from "lucide-react";
+import { Home, BarChart3, Settings, Activity } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { icon: Home, label: "Home", path: "/" },
   { icon: BarChart3, label: "Insights", path: "/insights" },
+  { icon: Activity, label: "Dashboard", path: "/dashboard" },
   { icon: Settings, label: "Settings", path: "/settings" }
 ];
 

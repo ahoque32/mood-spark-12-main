@@ -63,9 +63,10 @@ export async function POST(request: NextRequest) {
       accessToken
     }, { status: 201 });
   } catch (error) {
+    console.error('Registration error:', error);
     const dbError = handleDatabaseError(error);
     return NextResponse.json(
-      { error: dbError.message },
+      { error: dbError.message, details: error instanceof Error ? error.message : 'Unknown error' },
       { status: dbError.statusCode }
     );
   }

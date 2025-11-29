@@ -20,7 +20,8 @@ export class SessionQueries {
         id: uuidv4(),
         userId: userId,
         refreshToken: refreshToken,
-        expiresAt: expiresAt.toISOString()
+        expiresAt: expiresAt.toISOString(),
+        createdAt: new Date().toISOString()
       })
       .select()
       .single();

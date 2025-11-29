@@ -30,39 +30,67 @@ export interface MoodQueryParams {
 
 export class MoodQueries {
   static async create(data: CreateMoodEntryData): Promise<MoodEntry> {
+    const now = new Date().toISOString();
     const { data: moodEntry, error } = await supabase
-      .from('MoodEntry')
+      .from('mood_entries')
       .insert({
         id: uuidv4(),
-        userId: data.userId,
-        mood: data.mood,
-        note: data.note || null,
-        source: data.source,
-        timestamp: new Date().toISOString()
+        user_id: data.userId,
+        mood_value: data.mood,
+        notes: data.note || null,
+        context: { source: data.source },
+        timestamp: now,
+        "createdAt": now,
+        "updatedAt": now
       })
       .select()
       .single();
 
     if (error) throw new Error(error.message);
-    return moodEntry;
+    
+    // Transform back to expected interface format
+    if (moodEntry) {
+      return {
+        id: moodEntry.id,
+        userId: moodEntry.user_id,
+        mood: moodEntry.mood_value,
+        note: moodEntry.notes,
+        source: moodEntry.context?.source || 'SELF',
+        timestamp: moodEntry.timestamp,
+        createdAt: moodEntry.createdAt,
+        updatedAt: moodEntry.updatedAt
+      };
+    }
+    throw new Error('Failed to create mood entry');
   }
 
   static async findById(id: string): Promise<MoodEntry | null> {
     const { data, error } = await supabase
-      .from('MoodEntry')
+      .from('mood_entries')
       .select('*')
       .eq('id', id)
       .single();
 
     if (error) return null;
-    return data;
+    if (!data) return null;
+    
+    return {
+      id: data.id,
+      userId: data.user_id,
+      mood: data.mood_value,
+      note: data.notes,
+      source: data.context?.source || 'SELF',
+      timestamp: data.timestamp,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt
+    };
   }
 
   static async findByUser(userId: string, params: MoodQueryParams = {}): Promise<MoodEntry[]> {
     let query = supabase
-      .from('MoodEntry')
+      .from('mood_entries')
       .select('*')
-      .eq('userId', userId)
+      .eq('user_id', userId)
       .order('timestamp', { ascending: false });
 
     if (params.startDate) {
@@ -80,37 +108,68 @@ export class MoodQueries {
 
     const { data, error } = await query;
     if (error) throw new Error(error.message);
-    return data || [];
+    return (data || []).map(item => ({
+      id: item.id,
+      userId: item.user_id,
+      mood: item.mood_value,
+      note: item.notes,
+      source: item.context?.source || 'SELF',
+      timestamp: item.timestamp,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt
+    }));
   }
 
   static async findByDateRange(userId: string, startDate: Date, endDate: Date): Promise<MoodEntry[]> {
     const { data, error } = await supabase
-      .from('MoodEntry')
+      .from('mood_entries')
       .select('*')
-      .eq('userId', userId)
+      .eq('user_id', userId)
       .gte('timestamp', startDate.toISOString())
       .lte('timestamp', endDate.toISOString())
       .order('timestamp', { ascending: false });
 
     if (error) throw new Error(error.message);
-    return data || [];
+    return (data || []).map(item => ({
+      id: item.id,
+      userId: item.user_id,
+      mood: item.mood_value,
+      note: item.notes,
+      source: item.context?.source || 'SELF',
+      timestamp: item.timestamp,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt
+    }));
   }
 
   static async update(id: string, data: { mood?: number; note?: string }): Promise<MoodEntry> {
+    const updateData: any = { "updatedAt": new Date().toISOString() };
+    if (data.mood !== undefined) updateData.mood_value = data.mood;
+    if (data.note !== undefined) updateData.notes = data.note;
+    
     const { data: moodEntry, error } = await supabase
-      .from('MoodEntry')
-      .update(data)
+      .from('mood_entries')
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw new Error(error.message);
-    return moodEntry;
+    return {
+      id: moodEntry.id,
+      userId: moodEntry.user_id,
+      mood: moodEntry.mood_value,
+      note: moodEntry.notes,
+      source: moodEntry.context?.source || 'SELF',
+      timestamp: moodEntry.timestamp,
+      createdAt: moodEntry.createdAt,
+      updatedAt: moodEntry.updatedAt
+    };
   }
 
   static async delete(id: string): Promise<void> {
     const { error } = await supabase
-      .from('MoodEntry')
+      .from('mood_entries')
       .delete()
       .eq('id', id);
 
@@ -122,15 +181,26 @@ export class MoodQueries {
     startDate.setDate(startDate.getDate() - days);
 
     const { data: moods, error } = await supabase
-      .from('MoodEntry')
+      .from('mood_entries')
       .select('*')
-      .eq('userId', userId)
+      .eq('user_id', userId)
       .gte('timestamp', startDate.toISOString())
       .order('timestamp', { ascending: true });
 
     if (error) throw new Error(error.message);
 
-    const moodEntries = moods || [];
+    const rawMoodEntries = moods || [];
+    const moodEntries = rawMoodEntries.map(item => ({
+      id: item.id,
+      userId: item.user_id,
+      mood: item.mood_value,
+      note: item.notes,
+      source: item.context?.source || 'SELF',
+      timestamp: item.timestamp,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt
+    }));
+    
     const averageMood = moodEntries.length > 0 
       ? moodEntries.reduce((sum, entry) => sum + entry.mood, 0) / moodEntries.length 
       : 0;

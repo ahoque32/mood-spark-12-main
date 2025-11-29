@@ -46,6 +46,8 @@
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
+    "google-auth-library": "^10.5.0",
+    "googleapis": "^166.0.0",
     "input-otp": "^1.4.2",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.462.0",
@@ -67,6 +69,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@anthropic-ai/claude-code": "^2.0.55",
     "@eslint/js": "^9.32.0",
     "@tailwindcss/typography": "^0.5.16",
     "@types/bcryptjs": "^2.4.6",

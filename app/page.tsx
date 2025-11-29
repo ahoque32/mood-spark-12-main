@@ -28,12 +28,31 @@ export default function Home() {
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [todayEntry, setTodayEntry] = useState<any>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const { trend, summary, entries, init, addEntry } = useAppStore();
   const { toast } = useToast();
 
   useEffect(() => {
     init();
+    checkTodayEntry();
   }, [init]);
+
+  const checkTodayEntry = async () => {
+    try {
+      const response = await fetch("/api/moods/today");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.hasEntry) {
+          setTodayEntry(data.entry);
+          setSelectedMood(data.entry.mood as Mood);
+          setNote(data.entry.note || "");
+        }
+      }
+    } catch (error) {
+      console.error("Failed to check today's entry:", error);
+    }
+  };
 
   const averageMood = useMemo(() => {
     if (!trend?.length) return null;
@@ -70,19 +89,35 @@ export default function Home() {
 
       if (response.ok) {
         addEntry(selectedMood, note);
+        
+        const responseData = await response.json();
+        setTodayEntry(responseData.mood);
 
         toast({
-          title: "Mood saved",
-          description: "Your mood entry has been recorded.",
+          title: todayEntry ? "Mood updated" : "Mood saved",
+          description: todayEntry 
+            ? "Your mood entry has been updated." 
+            : "Your mood entry has been recorded.",
         });
 
-        setSelectedMood(null);
-        setNote("");
+        // Don't clear if editing, just update the state
+        if (!todayEntry) {
+          setSelectedMood(null);
+          setNote("");
+        }
+        setIsEditing(false);
       } else {
         const data = await response.json();
+        let errorMessage = data.error || "Please try again.";
+        
+        // Special handling for authentication errors
+        if (response.status === 401) {
+          errorMessage = "Please log in again to save your mood.";
+        }
+        
         toast({
           title: "Failed to save mood",
-          description: data.error || "Please try again.",
+          description: errorMessage,
           variant: "destructive",
         });
       }
@@ -190,12 +225,14 @@ export default function Home() {
                 <div>
                   <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Daily pulse</p>
                   <h2 className="font-display text-2xl font-semibold text-foreground">
-                    Choose a mood, drop a note, and press save.
+                    {todayEntry 
+                      ? "You've already logged today. Edit your entry below."
+                      : "Choose a mood, drop a note, and press save."}
                   </h2>
                 </div>
                 <div className="flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-primary shadow-sm backdrop-blur dark:bg-card">
-                  <span className="h-2 w-2 rounded-full bg-primary" />
-                  Live sync
+                  <span className={`h-2 w-2 rounded-full ${todayEntry ? 'bg-green-500' : 'bg-primary'}`} />
+                  {todayEntry ? 'Today logged' : 'Live sync'}
                 </div>
               </div>
 
@@ -217,6 +254,11 @@ export default function Home() {
 
                 <div className="space-y-4">
                   <NoteInput value={note} onChange={setNote} />
+                  {todayEntry && (
+                    <div className="rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-3 py-2 text-xs text-green-700 dark:text-green-400">
+                      ✓ Today's mood already saved at {new Date(todayEntry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  )}
                   <div className="grid gap-2 md:grid-cols-2">
                     {prompts.map((prompt) => (
                       <div
@@ -234,7 +276,9 @@ export default function Home() {
                     onClick={handleSave}
                     disabled={!selectedMood || isLoading}
                   >
-                    {isLoading ? "Saving..." : "Save this mood"}
+                    {isLoading 
+                      ? (todayEntry ? "Updating..." : "Saving...") 
+                      : (todayEntry ? "Update today's mood" : "Save this mood")}
                   </Button>
                 </div>
               </div>

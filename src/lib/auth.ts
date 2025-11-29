@@ -12,7 +12,7 @@ export interface TokenPayload {
 export class AuthService {
   private static readonly JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
   private static readonly REFRESH_SECRET = process.env.REFRESH_SECRET || 'fallback-refresh-secret';
-  private static readonly ACCESS_TOKEN_EXPIRY = '15m';
+  private static readonly ACCESS_TOKEN_EXPIRY = '24h';
   private static readonly REFRESH_TOKEN_EXPIRY = '7d';
 
   static generateTokenPair(user: User) {
