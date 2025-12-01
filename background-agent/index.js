@@ -10,11 +10,13 @@
  */
 
 const activeWindow = require('active-win');
-const iohook = require('iohook');
+// Note: iohook removed due to compatibility issues with Node.js v22
 const { machineId } = require('node-machine-id');
 const fetch = require('node-fetch');
 const fs = require('fs').promises;
 const path = require('path');
+// Note: For Node.js compatibility, we'll implement the system tracking directly here
+// The TypeScript version is available for the web app
 
 class SystemUsageAgent {
   constructor() {
@@ -35,13 +37,22 @@ class SystemUsageAgent {
       sessionStart: Date.now(),
       isScreenLocked: false,
       activityBuffer: [],
-      hourlyStats: new Map()
+      hourlyStats: new Map(),
+      lastSystemMetrics: null
     };
+
+    // System information modules
+    this.si = require('systeminformation');
+    this.os = require('os');
+    const { exec } = require('child_process');
+    this.util = require('util');
+    this.execAsync = this.util.promisify(exec);
 
     this.timers = {
       pollTimer: null,
       idleCheckTimer: null,
-      statsTimer: null
+      statsTimer: null,
+      systemMetricsTimer: null
     };
 
     console.log('🚀 System Usage Agent initializing...');
@@ -177,18 +188,11 @@ class SystemUsageAgent {
   }
 
   setupActivityMonitoring() {
-    // Monitor keyboard and mouse events
-    iohook.on('keydown', () => this.handleActivity('keyboard'));
-    iohook.on('mousedown', () => this.handleActivity('mouse'));
-    iohook.on('mousemove', () => this.handleActivity('mouse'));
-
-    // Start iohook
-    iohook.start();
-
+    // Note: Simplified activity monitoring without iohook
     // Monitor screen lock/unlock (platform-specific)
     this.setupScreenMonitoring();
 
-    console.log('🖱️  Activity monitoring started');
+    console.log('🖱️  Activity monitoring started (simplified mode)');
   }
 
   setupScreenMonitoring() {
@@ -252,6 +256,11 @@ class SystemUsageAgent {
     this.timers.sessionCheckTimer = setInterval(async () => {
       await this.checkUserSession();
     }, 2 * 60 * 1000); // Every 2 minutes
+
+    // Collect comprehensive system metrics every 2 minutes
+    this.timers.systemMetricsTimer = setInterval(async () => {
+      await this.collectSystemMetrics();
+    }, 2 * 60 * 1000); // Every 2 minutes
   }
 
   async checkUserSession() {
@@ -313,6 +322,287 @@ class SystemUsageAgent {
       }
     } catch (error) {
       console.warn('⚠️  Failed to get active window:', error.message);
+    }
+  }
+
+  async collectSystemMetrics() {
+    try {
+      console.log('📊 Collecting comprehensive system metrics...');
+      
+      const metrics = await this.gatherSystemMetrics();
+      this.state.lastSystemMetrics = metrics;
+      
+      // Send comprehensive metrics to API
+      await this.sendSystemMetricsToAPI(metrics);
+      
+      console.log('✅ System metrics collected and sent to API');
+      console.log(`   CPU: ${metrics.cpu.usage.toFixed(1)}% | Memory: ${(metrics.memory.used / 1024 / 1024 / 1024).toFixed(1)}GB`);
+      console.log(`   Active App: ${metrics.applications.active} | Focus Score: ${metrics.focus.focusScore.toFixed(2)}`);
+      
+    } catch (error) {
+      console.warn('⚠️  Failed to collect system metrics:', error.message);
+    }
+  }
+
+  async gatherSystemMetrics() {
+    const now = Date.now();
+    
+    // Collect system performance data
+    const [cpuData, memData, processData, diskData, networkData] = await Promise.all([
+      this.si.currentLoad(),
+      this.si.mem(),
+      this.si.processes(),
+      this.si.fsSize(),
+      this.si.networkStats()
+    ]);
+
+    // Get active window for application tracking
+    const activeApp = await this.getActiveApplication();
+    
+    // Calculate focus and productivity metrics
+    const focusMetrics = this.calculateFocusMetrics(activeApp, processData);
+    
+    // Get development activity
+    const devActivity = await this.getDevelopmentActivity(processData);
+    
+    // Get communication status
+    const commActivity = this.getCommunicationActivity(processData);
+
+    return {
+      timestamp: new Date().toISOString(),
+      cpu: {
+        usage: cpuData.currentLoad,
+        temperature: cpuData.cpus?.[0]?.temp || null,
+        processes: processData.all,
+        loadAverage: this.os.loadavg()
+      },
+      memory: {
+        total: memData.total,
+        used: memData.used,
+        free: memData.free,
+        pressure: memData.used / memData.total,
+        swapUsed: memData.swapused
+      },
+      disk: {
+        total: diskData.reduce((acc, disk) => acc + disk.size, 0),
+        used: diskData.reduce((acc, disk) => acc + disk.used, 0),
+        free: diskData.reduce((acc, disk) => acc + disk.available, 0)
+      },
+      network: {
+        bytesReceived: networkData.reduce((acc, net) => acc + net.rx_bytes, 0),
+        bytesSent: networkData.reduce((acc, net) => acc + net.tx_bytes, 0),
+        packetsReceived: networkData.reduce((acc, net) => acc + net.rx_sec, 0),
+        packetsSent: networkData.reduce((acc, net) => acc + net.tx_sec, 0)
+      },
+      applications: {
+        active: activeApp?.name || this.state.currentApp || 'Unknown',
+        allRunning: this.categorizeRunningApps(processData.list),
+        focusTime: focusMetrics.focusTime,
+        switches: focusMetrics.appSwitches
+      },
+      development: devActivity,
+      communication: commActivity,
+      focus: focusMetrics,
+      environment: {
+        platform: process.platform,
+        arch: process.arch,
+        nodeVersion: process.version,
+        uptime: this.os.uptime(),
+        battery: await this.getBatteryInfo(),
+        doNotDisturb: await this.getDoNotDisturbStatus()
+      }
+    };
+  }
+
+  async getActiveApplication() {
+    try {
+      const window = await activeWindow();
+      return {
+        name: window?.owner?.name,
+        title: window?.title,
+        pid: window?.owner?.pid
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  categorizeRunningApps(processes) {
+    const appCategories = {
+      development: ['Code', 'WebStorm', 'IntelliJ', 'Xcode', 'Terminal', 'iTerm'],
+      communication: ['Slack', 'Teams', 'Zoom', 'Discord', 'Skype'],
+      browsers: ['Chrome', 'Firefox', 'Safari', 'Edge'],
+      productivity: ['Notion', 'Obsidian', 'Evernote', 'Word', 'Excel'],
+      media: ['Spotify', 'iTunes', 'VLC', 'YouTube'],
+      system: ['Finder', 'System Preferences', 'Activity Monitor']
+    };
+
+    const categorized = {};
+    const runningApps = [];
+
+    processes.slice(0, 20).forEach(proc => {
+      const appName = proc.name;
+      const category = Object.keys(appCategories).find(cat => 
+        appCategories[cat].some(app => appName.includes(app))
+      ) || 'other';
+
+      if (!categorized[category]) categorized[category] = [];
+      categorized[category].push({
+        name: appName,
+        pid: proc.pid,
+        cpu: proc.cpu,
+        memory: proc.mem
+      });
+
+      runningApps.push({
+        name: appName,
+        category,
+        cpu: proc.cpu,
+        memory: proc.mem
+      });
+    });
+
+    return { categorized, summary: runningApps.slice(0, 10) };
+  }
+
+  calculateFocusMetrics(activeApp, processData) {
+    const now = Date.now();
+    const hourAgo = now - (60 * 60 * 1000);
+    
+    // Simple focus calculation based on app switches and active applications
+    const distractingApps = ['Safari', 'Chrome', 'YouTube', 'Netflix', 'Instagram', 'Twitter'];
+    const focusApps = ['Code', 'Terminal', 'Xcode', 'Notion', 'Word'];
+    
+    const activeAppName = activeApp?.name || '';
+    const isDistractingApp = distractingApps.some(app => activeAppName.includes(app));
+    const isFocusApp = focusApps.some(app => activeAppName.includes(app));
+    
+    // Calculate metrics (simplified for this implementation)
+    const distractionScore = isDistractingApp ? 0.8 : 0.2;
+    const focusScore = isFocusApp ? 0.9 : 0.4;
+    
+    return {
+      distractionScore,
+      focusScore,
+      deepWorkMinutes: isFocusApp ? 2 : 0, // Simplified - assume 2 min intervals
+      breaksTaken: isDistractingApp ? 1 : 0,
+      focusTime: isFocusApp ? 2 * 60 : 0, // 2 minutes in seconds
+      appSwitches: this.state.activityBuffer.filter(
+        event => event.type === 'app_switch' && 
+        new Date(event.timestamp).getTime() > hourAgo
+      ).length
+    };
+  }
+
+  async getDevelopmentActivity(processData) {
+    const devProcesses = processData.list.filter(proc => 
+      ['Code', 'Terminal', 'iTerm', 'node', 'npm', 'git'].some(dev => 
+        proc.name.toLowerCase().includes(dev.toLowerCase())
+      )
+    );
+
+    // Check for Git activity (simplified)
+    let gitCommits = 0;
+    try {
+      const { stdout } = await this.execAsync('git log --oneline --since="2 hours ago" 2>/dev/null | wc -l');
+      gitCommits = parseInt(stdout.trim()) || 0;
+    } catch (error) {
+      // Not in a git repo or git not available
+    }
+
+    return {
+      ideActive: devProcesses.some(proc => 
+        ['Code', 'WebStorm', 'Xcode'].some(ide => proc.name.includes(ide))
+      ),
+      gitCommits,
+      terminalSessions: devProcesses.filter(proc => 
+        ['Terminal', 'iTerm'].some(term => proc.name.includes(term))
+      ).length,
+      dockerContainers: devProcesses.filter(proc => 
+        proc.name.includes('Docker')
+      ).length,
+      localServers: devProcesses.filter(proc => 
+        ['node', 'npm', 'serve'].some(server => proc.name.includes(server))
+      ).length
+    };
+  }
+
+  getCommunicationActivity(processData) {
+    const commApps = processData.list.filter(proc => 
+      ['Zoom', 'Teams', 'Slack', 'Discord', 'Skype'].some(app => 
+        proc.name.includes(app)
+      )
+    );
+
+    const meetingApps = commApps.filter(proc => 
+      ['Zoom', 'Teams', 'Skype'].some(app => proc.name.includes(app))
+    );
+
+    return {
+      meetingActive: meetingApps.length > 0,
+      meetingDuration: meetingApps.length > 0 ? 2 : 0, // Simplified
+      slackActive: commApps.some(proc => proc.name.includes('Slack')),
+      discordActive: commApps.some(proc => proc.name.includes('Discord'))
+    };
+  }
+
+  async getBatteryInfo() {
+    try {
+      if (process.platform === 'darwin') {
+        const { stdout } = await this.execAsync('pmset -g batt | grep -o "[0-9]*%" | head -1');
+        return parseInt(stdout.replace('%', '')) || null;
+      }
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async getDoNotDisturbStatus() {
+    try {
+      if (process.platform === 'darwin') {
+        const { stdout } = await this.execAsync('defaults read ~/Library/Preferences/ByHost/com.apple.notificationcenterui doNotDisturb 2>/dev/null');
+        return stdout.trim() === '1';
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async sendSystemMetricsToAPI(metrics) {
+    // Skip for anonymous sessions, but log locally
+    if (this.config.isAnonymous) {
+      console.log('📝 [ANONYMOUS] System metrics collected (not sent to API)');
+      return;
+    }
+
+    try {
+      const response = await this.makeApiRequest('/tracking/system', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Device-ID': this.config.deviceId
+        },
+        body: JSON.stringify(metrics)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`✅ System metrics sent to API (System Score: ${data.systemScore})`);
+      } else {
+        throw new Error(`API responded with ${response.status}`);
+      }
+
+    } catch (error) {
+      console.warn('⚠️  Failed to send system metrics to API:', error.message);
+      // Store failed metrics for retry when user logs back in
+      this.storeFailedEvent({
+        type: 'system_metrics',
+        timestamp: new Date().toISOString(),
+        deviceId: this.config.deviceId,
+        data: metrics
+      });
     }
   }
 
@@ -502,12 +792,7 @@ class SystemUsageAgent {
       if (timer) clearInterval(timer);
     });
 
-    // Stop iohook
-    try {
-      iohook.stop();
-    } catch (error) {
-      console.warn('Warning: Failed to stop iohook cleanly');
-    }
+    // Note: iohook cleanup removed (not needed in simplified mode)
 
     // Log shutdown event
     this.logSystemEvent('agent_shutdown', {

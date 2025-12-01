@@ -4,7 +4,7 @@
   "description": "Background agent for tracking system-wide laptop usage for Mood Spark",
   "main": "index.js",
   "bin": {
-    "mood-agent": "./index.js"
+    "mood-agent": "index.js"
   },
   "scripts": {
     "start": "node index.js",
@@ -23,9 +23,9 @@
   "license": "MIT",
   "dependencies": {
     "active-win": "^8.0.0",
-    "iohook": "^0.9.3",
     "node-machine-id": "^1.1.12",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "systeminformation": "^5.22.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.0"
